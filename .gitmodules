@@ -1,0 +1,6 @@
+[submodule "board-imperium-front"]
+	path = board-imperium-front
+	url = https://github.com/thiagorocha14/board-imperium-front.git
+[submodule "board-imperium-back"]
+	path = board-imperium-back
+	url = https://github.com/thiagorocha14/board-imperium-back.git
