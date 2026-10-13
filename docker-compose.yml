@@ -1,0 +1,72 @@
+name: board-imperium
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: board-imperium-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:${DB_PORT_HOST}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  back:
+    build:
+      context: ./board-imperium-back
+      target: dev
+    container_name: board-imperium-back
+    restart: unless-stopped
+    env_file:
+      - ./board-imperium-back/.env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: 3000
+      FRONT_URL: ${FRONT_URL}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL}
+      COOKIE_SECURE: ${COOKIE_SECURE}
+      AUTH_ALLOWED_EMAILS: ${AUTH_ALLOWED_EMAILS}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./board-imperium-back:/app
+      - /app/node_modules
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  front:
+    build:
+      context: ./board-imperium-front
+      target: dev
+    container_name: board-imperium-front
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./board-imperium-front:/app
+      - /app/node_modules
+      - /app/.angular
+    depends_on:
+      - back
+
+volumes:
+  mysql_data:
